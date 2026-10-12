@@ -1,0 +1,66 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Asset {
+  id String @id @default(uuid())
+
+  name     String
+  type     String
+  filename String
+  url      String
+
+  createdAt DateTime @default(now())
+}
+
+model Quotation {
+  id String @id @default(uuid())
+
+  recipient String
+  address   String
+  city      String
+
+  date         String
+  number       String
+  validityDays String
+
+  senderCompany String
+  introduction  String
+
+  signer   String
+  position String
+  email    String
+  phone    String
+
+  taxEnabled      Boolean @default(true)
+  taxMode         String?
+  taxRate         Float?
+  taxManualAmount Float?
+
+  signatureImage String?
+  stampImage     String?
+
+  pdfUrl String?
+
+  createdAt DateTime @default(now())
+
+  items QuotationItem[]
+}
+
+model QuotationItem {
+  id String @id @default(uuid())
+
+  quotationId String
+
+  quotation Quotation @relation(fields: [quotationId], references: [id], onDelete: Cascade)
+
+  description String
+  quantity    Int
+  unit        String
+  unitPrice   Float
+}
