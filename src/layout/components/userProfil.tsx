@@ -1,10 +1,11 @@
-import { AlignJustify } from 'lucide-react'
+import { UserRound } from 'lucide-react'
 
 export default function UserProfile() {
   return (
-    <div className="flex items-center gap-16 rounded-3xl border px-24 py-12 shadow-sm transition-shadow duration-300 hover:cursor-pointer hover:shadow-md">
-      <AlignJustify size={14} />
-      <div className="h-[3.6rem] w-[3.6rem] rounded-full bg-slate-300" />
+    <div className="flex shrink-0 items-center gap-8 rounded-full border border-slate-200 px-8 py-6" aria-label="Profil pengguna">
+      <span className="flex h-[3.2rem] w-[3.2rem] items-center justify-center rounded-full bg-slate-100 text-slate-600">
+        <UserRound aria-hidden="true" size={16} />
+      </span>
     </div>
   )
 }

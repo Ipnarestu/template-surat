@@ -5,6 +5,10 @@ import {
   HomePage,
   MainLayout,
   NotFoundPage,
+  QuotationPage,
+  PurchaseOrderPage,
+  InvoicePage,
+  PaymentPage,
   SuratHomePage,
   SuratPage,
 } from './loadables'
@@ -29,6 +33,13 @@ export const router = createBrowserRouter([
         path: '',
         element: <HomePage />,
       },
+      {
+        path: 'quotation',
+        element: <QuotationPage />,
+      },
+      { path: 'po', element: <PurchaseOrderPage /> },
+      { path: 'invoice', element: <InvoicePage /> },
+      { path: 'bukti-bayar', element: <PaymentPage /> },
       {
         path: 'surat',
         element: <SuratPage />,

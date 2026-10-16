@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react'
+import { useLocation } from 'react-router-dom'
+import { closeNotification, showConfirm, showError, showLoading, showSuccess, showWarning } from '@/utils/notifications'
 import {
   Eye,
   EyeOff,
@@ -32,6 +34,7 @@ import {
 } from './quotationShared'
 
 type QuotationFormData = QuotationData & {
+  quotationId?: string
   signatureImage?: string
   stampImage?: string
 }
@@ -133,6 +136,7 @@ function readImageAsPng(file: File): Promise<string> {
 }
 
 export default function SuratPenawaran() {
+  const location = useLocation()
   const [data, setData] = useState<QuotationFormData>(initialData)
   const [error, setError] = useState('')
   const [downloading, setDownloading] = useState<ExportFormat | null>(null)
@@ -142,6 +146,41 @@ export default function SuratPenawaran() {
   const [signatureFile, setSignatureFile] = useState<File | null>(null)
   const [stampFile, setStampFile] = useState<File | null>(null)
   const [uploadMessage, setUploadMessage] = useState('')
+
+  useEffect(() => {
+    const incoming = (location.state as { quotation?: Partial<QuotationFormData> & { id?: string } } | null)?.quotation
+
+    if (incoming) {
+      setData((previous) => ({
+        ...previous,
+        quotationId: incoming.id ?? incoming.quotationId ?? previous.quotationId,
+        recipient: incoming.recipient || previous.recipient,
+        address: incoming.address || previous.address,
+        city: incoming.city || previous.city,
+        date: incoming.date || previous.date,
+        number: incoming.number || previous.number,
+        validityDays: incoming.validityDays || previous.validityDays,
+        senderCompany: incoming.senderCompany || previous.senderCompany,
+        introduction: incoming.introduction || previous.introduction,
+        signer: incoming.signer || previous.signer,
+        position: incoming.position || previous.position,
+        email: incoming.email || previous.email,
+        phone: incoming.phone || previous.phone,
+        taxEnabled: incoming.taxEnabled ?? previous.taxEnabled,
+        taxMode: incoming.taxMode || previous.taxMode,
+        taxRate: incoming.taxRate ?? previous.taxRate,
+        taxManualAmount: incoming.taxManualAmount ?? previous.taxManualAmount,
+        items: incoming.items?.length ? incoming.items.map((item) => ({
+          ...item,
+          id: String(item.id ?? crypto.randomUUID()),
+          quantity: Number(item.quantity ?? 1),
+          unitPrice: Number(item.unitPrice ?? 0),
+          description: item.description ?? '',
+          unit: item.unit ?? 'pcs',
+        })) : previous.items,
+      }))
+    }
+  }, [location.state])
 
   useEffect(() => {
 
@@ -207,7 +246,8 @@ export default function SuratPenawaran() {
     setError('')
   }
 
-  function removeItem(id: string) {
+  async function removeItem(id: string) {
+    if (!(await showConfirm('Hapus baris penawaran?', 'Baris ini akan dihapus dari surat yang sedang disusun.', 'Ya, hapus'))) return
     setData((previous) => {
       const items = previous.items.filter((item) => item.id !== id)
 
@@ -244,19 +284,12 @@ export default function SuratPenawaran() {
       })
 
       if (!response.ok) {
-        const result = await response.json().catch(() => null)
-        throw new Error(result?.error || 'Unggah file gagal.')
+        throw new Error('Unggah file gagal.')
       }
 
-      setUploadMessage(
-        `${kind === 'signature' ? 'Tanda tangan' : 'Stempel perusahaan'} berhasil diunggah ke backend.`,
-      )
-    } catch (cause) {
-      setUploadMessage(
-        cause instanceof Error
-          ? `${cause.message} Gambar lokal tetap dapat digunakan jika sudah berhasil diproses.`
-          : 'Gagal mengunggah file. Pastikan backend berjalan.',
-      )
+      await showSuccess('Lampiran berhasil diunggah', `${kind === 'signature' ? 'Tanda tangan' : 'Stempel perusahaan'} tersimpan di backend.`)
+    } catch {
+      await showWarning('Unggah lampiran gagal', 'Backend tidak dapat menyimpan file. Gambar lokal tetap tersedia untuk dokumen ini.')
     }
   }
 
@@ -339,11 +372,6 @@ export default function SuratPenawaran() {
     )
 
 
-    setUploadMessage(
-      'Gambar tanda tangan siap digunakan.',
-    )
-
-
   }
   catch(cause){
 
@@ -352,6 +380,7 @@ export default function SuratPenawaran() {
       ? cause.message
       : 'Gagal memproses gambar tanda tangan.',
     )
+    await showError('Gambar tanda tangan gagal diproses', 'Coba pilih file gambar lain dalam format PNG, JPG, atau WEBP.')
 
   }
 
@@ -462,12 +491,6 @@ async function handleStampChange(
 
 
 
-    setUploadMessage(
-      'Gambar stempel siap digunakan.',
-    )
-
-
-
   }
   catch(cause){
 
@@ -481,6 +504,7 @@ async function handleStampChange(
       : 'Gagal memproses gambar stempel.',
 
     )
+    await showError('Gambar stempel gagal diproses', 'Coba pilih file gambar lain dalam format PNG, JPG, atau WEBP.')
 
 
   }
@@ -500,6 +524,7 @@ async function download(format: ExportFormat) {
 
   setDownloading(format)
   setError('')
+  showLoading('Menyiapkan dokumen...')
 
   try {
     let file: Blob
@@ -529,14 +554,39 @@ async function download(format: ExportFormat) {
       quotationFileName(data, format),
     )
 
+    let linkedToQuotation = false
+    if (data.quotationId) {
+      try {
+        const formData = new FormData()
+        formData.append('file', file, quotationFileName(data, format))
+        const response = await fetch(`http://localhost:3001/api/quotations/${data.quotationId}/attachments`, {
+          method: 'POST',
+          body: formData,
+        })
+        linkedToQuotation = response.ok
+      } catch {
+        linkedToQuotation = false
+      }
+    }
 
-  } catch (cause) {
+    closeNotification()
+    if (data.quotationId && !linkedToQuotation) {
+      await showWarning('Dokumen berhasil diunduh', 'Backend belum menyimpan salinan dokumen pada quotation. File hasil unduhan tetap tersedia di perangkat ini.')
+    } else {
+      await showSuccess(
+        'Dokumen berhasil dibuat',
+        data.quotationId
+          ? `File ${format.toUpperCase()} berhasil diunduh dan ditautkan ke quotation.`
+          : `File ${format.toUpperCase()} berhasil diunduh.`,
+      )
+    }
 
-    setError(
-      cause instanceof Error
-        ? cause.message
-        : 'Gagal membuat file.',
-    )
+
+  } catch {
+    closeNotification()
+
+    setError('Dokumen gagal dibuat. Periksa kembali data dan coba lagi.')
+    await showError('Gagal membuat dokumen', 'Periksa kembali data dan coba lagi.')
 
   } finally {
 

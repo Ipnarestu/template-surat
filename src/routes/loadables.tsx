@@ -22,6 +22,10 @@ export const HomePage = loadable(
 )
 
 export const SuratPage = loadable(() => import('@/pages/surat'))
+export const QuotationPage = loadable(() => import('@/pages/quotation'))
+export const PurchaseOrderPage = loadable(() => import('@/pages/po'))
+export const InvoicePage = loadable(() => import('@/pages/invoice'))
+export const PaymentPage = loadable(() => import('@/pages/buktiBayar'))
 
 export const SuratHomePage = loadable(
   () => {

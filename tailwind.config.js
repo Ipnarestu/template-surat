@@ -29,14 +29,18 @@ export default {
       1: '0.1rem',
       2: '0.2rem',
       4: '0.4rem',
+      6: '0.6rem',
+      10: '1rem',
       8: '0.8rem',
       12: '1.2rem',
       16: '1.6rem',
       24: '2.4rem',
       32: '3.2rem',
+      40: '4rem',
       48: '4.8rem',
       64: '6.4rem',
       80: '8rem',
+      20: '2rem',
       96: '9.6rem',
       128: '12.8rem',
     },
@@ -78,13 +82,16 @@ export default {
     // ! Menggunakan unit em untuk media queries agar lebih konsisten
     // ! 1rem = 1em = 16px pada kebanyakan browser
     screens: {
-      phones: { max: '64em' }, // Mengatur ukuran layar untuk perangkat ponsel, maksimal 64em (1024px)
-      desktop: { min: '64.01em' }, // Ukuran untuk desktop mulai dari 64.01em (1025px ke atas)
+      phones: { max: '40em' },
+      tablet: { min: '40.01em', max: '64em' },
+      laptop: { min: '64.01em', max: '80em' },
+      desktop: { min: '80.01em' },
     },
 
     extend: {
       // Menambahkan font keluarga kustom
       fontFamily: {
+        sans: ['Plus Jakarta Sans', 'sans-serif'],
         nunito: ['Nunito Sans', 'sans-serif'],
         roboto: ['Roboto Slab', 'serif'],
         'sf-pro': ['SF Pro Display', 'sans-serif'],
@@ -97,16 +104,28 @@ export default {
 
       // ? ----- SISTEM WARNA -----
       colors: {
+        app: {
+          primary: '#1D4ED8',
+          secondary: '#475569',
+          success: '#15803D',
+          warning: '#B45309',
+          danger: '#B91C1C',
+          info: '#0369A1',
+          background: '#F8FAFC',
+          surface: '#FFFFFF',
+          border: '#E2E8F0',
+          muted: '#64748B',
+        },
         background: {
-          DEFAULT: '#f5f5f5', // Warna latar belakang default putih
+          DEFAULT: '#F8FAFC',
           secondary: '#F5F5DC', // Warna latar belakang sekunder (beige)
         },
         border: {
-          DEFAULT: '#8C9196', // Warna border default abu-abu
-          subdued: '#C9CCCF', // Warna border lebih terang
+          DEFAULT: '#E2E8F0',
+          subdued: '#CBD5E1',
         },
         primary: {
-          DEFAULT: '#E2E8F0 ', // Warna utama (terang abu-abu)
+          DEFAULT: '#1D4ED8',
         },
         secondary: {
           DEFAULT: '#1F2937', // Warna sekunder (gelap)

@@ -9,7 +9,7 @@ import {
 import { Input } from '.'
 import { ReactNode } from 'react'
 import clsx from 'clsx'
-import toast from 'react-hot-toast'
+import { showWarning } from '@/utils/notifications'
 import { Image, Loader } from 'lucide-react'
 
 export function InputFile({
@@ -63,29 +63,31 @@ export function InputFile({
                 disabled={isLoading || loadingFile || isDisabled}
                 placeholder="Lampiran"
                 onChange={(e) => {
-                  if (e.target.files[0].size > 5 * 1000000) {
-                    return toast.error(`File terlalu besar. Maksimal 5 MB`)
+                  const file = e.target.files?.[0]
+                  if (!file) return
+                  if (file.size > 5 * 1000000) {
+                    void showWarning('Ukuran file terlalu besar', 'Pilih file dengan ukuran maksimal 5 MB.')
+                    return
                   } else {
-                    if (e.target.files[0] != null && handleUploadFoto) {
-                      handleUploadFoto(e.target.files[0])
+                    if (handleUploadFoto) {
+                      handleUploadFoto(file)
                     } else if (handleUploadFotoWithName) {
-                      handleUploadFotoWithName(e.target.files[0], name)
+                      handleUploadFotoWithName(file, name)
                     } else if (
-                      e.target.files[0] != null &&
                       handleUploadMultiFoto
                     ) {
-                      handleUploadMultiFoto(e.target.files[0], index)
+                      handleUploadMultiFoto(file, index ?? 0)
                     }
                   }
                 }}
               />
               <div className="flex flex-col gap-12 phones:flex-col">
                 <label
-                  className="flex flex-col gap-12 font-roboto"
+                  className="flex flex-col gap-12"
                   htmlFor={`file_${name}`}
                 >
                   {isShowLabel && (
-                    <p className="text-primary-100">{label ?? 'Berkas'}</p>
+                    <p className="text-app-primary">{label ?? 'Berkas'}</p>
                   )}
                   <div className="flex">
                     {urls

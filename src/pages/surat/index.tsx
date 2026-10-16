@@ -17,9 +17,9 @@ export default function SuratPage() {
   const [isShow, setIsShow] = useState<boolean>(false)
 
   return (
-    <div className="scrollbar flex h-full flex-col gap-32 overflow-auto px-[16rem] phones:px-32">
-      <div className="scrollbar flex w-full items-center gap-32 overflow-auto">
-        <div className="scrollbar flex w-full flex-1 items-center gap-32 overflow-auto">
+    <div className="scrollbar flex h-full min-w-0 flex-col gap-24 overflow-auto">
+      <div className="scrollbar flex w-full min-w-0 max-w-full items-center gap-12 overflow-hidden">
+        <div className="scrollbar flex min-w-0 flex-1 items-center gap-12 overflow-x-auto">
           {ListSurat?.map((item, idx) => {
             return (
               <div
@@ -37,7 +37,7 @@ export default function SuratPage() {
                 )}
                 key={idx}
               >
-                <p>{item?.icon}</p>
+                  <item.icon aria-hidden="true" size={18} className="shrink-0" />
                 <p className="text-nowrap">{item?.nama}</p>
               </div>
             )
@@ -45,7 +45,7 @@ export default function SuratPage() {
         </div>
         <div
           onClick={() => setIsShow(true)}
-          className="flex cursor-pointer items-center gap-12 rounded-2xl border border-gray-500 px-16 py-12 text-gray-500 transition-all duration-300 hover:bg-gray-500 hover:text-white"
+          className="flex shrink-0 cursor-pointer items-center gap-12 rounded-2xl border border-gray-500 px-16 py-12 text-gray-500 transition-all duration-300 hover:bg-gray-500 hover:text-white"
         >
           <Filter size={16} />
           <p>Filter</p>

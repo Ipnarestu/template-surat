@@ -1,5 +1,6 @@
 generator client {
   provider = "prisma-client-js"
+  output   = "../generated/prisma"
 }
 
 datasource db {
@@ -26,7 +27,7 @@ model Quotation {
   city      String
 
   date         String
-  number       String
+  number       String @unique
   validityDays String
 
   senderCompany String
@@ -45,11 +46,24 @@ model Quotation {
   signatureImage String?
   stampImage     String?
 
+  type           String  @default("Barang & Jasa")
+  status         String  @default("Draft")
+  title          String?
+  validUntil     String?
+  notes          String?
+  followUpDate   String?
+  followUpStatus String  @default("Belum dijadwalkan")
+  followUpNotes  String?
+
   pdfUrl String?
 
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  items QuotationItem[]
+  items          QuotationItem[]
+  attachments    QuotationAttachment[]
+  purchaseOrders PurchaseOrder[]
+  invoices       Invoice[]
 }
 
 model QuotationItem {
@@ -63,4 +77,174 @@ model QuotationItem {
   quantity    Int
   unit        String
   unitPrice   Float
+  discount    Float? @default(0)
+  taxRate     Float? @default(0)
+  subtotal    Float?
+}
+
+model QuotationAttachment {
+  id String @id @default(uuid())
+
+  quotationId String
+  quotation   Quotation @relation(fields: [quotationId], references: [id], onDelete: Cascade)
+
+  name       String
+  filename   String
+  mimeType   String
+  size       Int
+  url        String
+  uploadedAt DateTime @default(now())
+}
+
+model PurchaseOrder {
+  id            String   @id @default(uuid())
+  poNumber      String   @unique
+  date          DateTime
+  receivedAt    DateTime @default(now())
+  recipient     String
+  amount        Decimal? @db.Decimal(18, 2)
+  status        String   @default("RECEIVED")
+  notes         String?
+  source        String   @default("MANUAL")
+  legacyLocalId String?  @unique
+  quotationId   String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  quotation   Quotation?                @relation(fields: [quotationId], references: [id], onDelete: SetNull)
+  invoices    Invoice[]
+  attachments PurchaseOrderAttachment[]
+
+  @@index([quotationId])
+  @@index([date])
+  @@index([status])
+}
+
+model PurchaseOrderAttachment {
+  id              String   @id @default(uuid())
+  purchaseOrderId String
+  name            String
+  filename        String
+  mimeType        String
+  size            Int
+  url             String
+  uploadedAt      DateTime @default(now())
+
+  purchaseOrder PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+
+  @@index([purchaseOrderId])
+}
+
+model Invoice {
+  id              String    @id @default(uuid())
+  number          String    @unique
+  customerName    String
+  issueDate       DateTime?
+  dueDate         DateTime
+  currency        String    @default("IDR")
+  status          String    @default("DRAFT")
+  subtotal        Decimal   @db.Decimal(18, 2)
+  taxAmount       Decimal   @db.Decimal(18, 2)
+  total           Decimal   @db.Decimal(18, 2)
+  notes           String?
+  purchaseOrderId String?
+  quotationId     String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  purchaseOrder PurchaseOrder?         @relation(fields: [purchaseOrderId], references: [id], onDelete: SetNull)
+  quotation     Quotation?             @relation(fields: [quotationId], references: [id], onDelete: SetNull)
+  items         InvoiceItem[]
+  payments      Payment[]
+  statusHistory InvoiceStatusHistory[]
+
+  @@index([purchaseOrderId])
+  @@index([quotationId])
+  @@index([status])
+  @@index([issueDate])
+  @@index([dueDate])
+}
+
+model InvoiceItem {
+  id           String  @id @default(uuid())
+  invoiceId    String
+  sourceItemId String?
+  description  String
+  quantity     Decimal @db.Decimal(12, 3)
+  unit         String
+  unitPrice    Decimal @db.Decimal(18, 2)
+  discount     Decimal @default(0) @db.Decimal(18, 2)
+  taxRate      Decimal @default(0) @db.Decimal(5, 2)
+  subtotal     Decimal @db.Decimal(18, 2)
+  taxAmount    Decimal @db.Decimal(18, 2)
+  total        Decimal @db.Decimal(18, 2)
+
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId])
+}
+
+model Payment {
+  id                 String    @id @default(uuid())
+  invoiceId          String
+  amount             Decimal   @db.Decimal(18, 2)
+  paymentDate        DateTime
+  method             String
+  reference          String?
+  notes              String?
+  status             String    @default("PENDING")
+  verifiedAt         DateTime?
+  cancelledAt        DateTime?
+  cancellationReason String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  invoice     Invoice                @relation(fields: [invoiceId], references: [id], onDelete: Restrict)
+  attachments PaymentAttachment[]
+  history     PaymentStatusHistory[]
+
+  @@index([invoiceId])
+  @@index([paymentDate])
+  @@index([status])
+}
+
+model PaymentAttachment {
+  id         String   @id @default(uuid())
+  paymentId  String
+  name       String
+  filename   String
+  mimeType   String
+  size       Int
+  url        String
+  uploadedAt DateTime @default(now())
+
+  payment Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+
+  @@index([paymentId])
+}
+
+model PaymentStatusHistory {
+  id         String   @id @default(uuid())
+  paymentId  String
+  fromStatus String?
+  toStatus   String
+  note       String?
+  createdAt  DateTime @default(now())
+
+  payment Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+
+  @@index([paymentId, createdAt])
+}
+
+model InvoiceStatusHistory {
+  id         String   @id @default(uuid())
+  invoiceId  String
+  fromStatus String?
+  toStatus   String
+  note       String?
+  createdAt  DateTime @default(now())
+
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId, createdAt])
 }

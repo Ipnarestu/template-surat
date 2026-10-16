@@ -9,6 +9,7 @@ import { generatePdfDefinition } from './generatePDFDefenition'
 import dayjs from 'dayjs'
 import 'dayjs/locale/id'
 import { Plus, Trash2 } from 'lucide-react'
+import { showConfirm } from '@/utils/notifications'
 
 pdfMake.vfs = pdfFonts.vfs
 
@@ -64,8 +65,9 @@ export default function SuratPermintaanBarang() {
     })
   }
 
-  const removeItem = (index: number) => {
+  const removeItem = async (index: number) => {
     if (formData.items.length <= 1) return
+    if (!(await showConfirm('Hapus barang dari permintaan?', 'Perubahan ini berlaku pada dokumen yang sedang disusun.', 'Ya, hapus'))) return
     setFormData({
       ...formData,
       items: formData.items.filter((_, i) => i !== index),
